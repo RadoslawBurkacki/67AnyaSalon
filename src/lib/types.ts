@@ -5,7 +5,7 @@ export interface Booking {
   name: string
   email: string
   phone: string
-  service_category: 'nail' | 'massage'
+  service_category: 'nail' | 'massage' | 'eyelash' | 'eyebrow'
   service_name: string
   date: string
   time_slot: string
@@ -25,7 +25,7 @@ export interface BlockedSlot {
 
 export interface Service {
   id: string
-  category: 'nail' | 'massage'
+  category: 'nail' | 'massage' | 'eyelash' | 'eyebrow'
   name: string
   description: string
   duration: number
@@ -53,6 +53,28 @@ export const MASSAGE_SERVICES: Service[] = [
   { id: 'm6', category: 'massage', name: 'Aromatherapy Massage', description: 'Relaxing massage with premium essential oils', duration: 60, price: 75 },
   { id: 'm7', category: 'massage', name: 'Couples Massage', description: 'Side-by-side relaxation for two', duration: 60, price: 130 },
   { id: 'm8', category: 'massage', name: 'Pamper Package', description: 'Gel manicure + 60 min Swedish massage', duration: 120, price: 110 },
+]
+
+export const EYELASH_SERVICES: Service[] = [
+  { id: 'el1', category: 'eyelash', name: 'Classic Lash Extensions', description: 'Natural, single-strand extensions for a subtle enhancement', duration: 90, price: 55 },
+  { id: 'el2', category: 'eyelash', name: 'Hybrid Lash Extensions', description: 'Mix of classic & volume for a soft, textured look', duration: 105, price: 70, popular: true },
+  { id: 'el3', category: 'eyelash', name: 'Volume Lash Extensions', description: 'Fluffy, full-volume fans for a dramatic effect', duration: 120, price: 85, popular: true },
+  { id: 'el4', category: 'eyelash', name: 'Mega Volume Lashes', description: 'Ultra-lush, maximum density lash set', duration: 150, price: 100 },
+  { id: 'el5', category: 'eyelash', name: 'Classic Lash Infill', description: 'Infill for existing classic lash extensions', duration: 45, price: 35 },
+  { id: 'el6', category: 'eyelash', name: 'Hybrid / Volume Infill', description: 'Infill for hybrid or volume lash extensions', duration: 60, price: 45 },
+  { id: 'el7', category: 'eyelash', name: 'Lash Lift & Tint', description: 'Curl, lift and tint your natural lashes for weeks', duration: 60, price: 50, popular: true },
+  { id: 'el8', category: 'eyelash', name: 'Lash Removal', description: 'Safe removal of existing lash extensions', duration: 30, price: 15 },
+]
+
+export const EYEBROW_SERVICES: Service[] = [
+  { id: 'eb1', category: 'eyebrow', name: 'Brow Wax & Shape', description: 'Clean, defined brow shape using warm wax', duration: 20, price: 15 },
+  { id: 'eb2', category: 'eyebrow', name: 'Brow Wax & Tint', description: 'Wax shape plus tint for colour and definition', duration: 30, price: 22, popular: true },
+  { id: 'eb3', category: 'eyebrow', name: 'Brow Threading', description: 'Precise hair removal using the threading technique', duration: 20, price: 15 },
+  { id: 'eb4', category: 'eyebrow', name: 'Brow Tint', description: 'Colour treatment to enhance and define brow hair', duration: 15, price: 12 },
+  { id: 'eb5', category: 'eyebrow', name: 'Brow Lamination', description: 'Restructure brow hairs for a full, brushed-up finish', duration: 60, price: 45, popular: true },
+  { id: 'eb6', category: 'eyebrow', name: 'Brow Lamination & Tint', description: 'Lamination with tint for bold, glossy brows', duration: 75, price: 55, popular: true },
+  { id: 'eb7', category: 'eyebrow', name: 'HD Brows', description: 'Signature brow design with tint, wax and threading', duration: 60, price: 50 },
+  { id: 'eb8', category: 'eyebrow', name: 'Henna Brows', description: 'Natural henna tint that stains skin and hair for lasting colour', duration: 45, price: 35 },
 ]
 
 export const TIME_SLOTS = [

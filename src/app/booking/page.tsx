@@ -10,7 +10,7 @@ import 'react-day-picker/dist/style.css'
 import { format, isBefore, startOfDay, addDays } from 'date-fns'
 import { ChevronLeft, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
-import { NAIL_SERVICES, MASSAGE_SERVICES, TIME_SLOTS, formatTime, type Service } from '@/lib/types'
+import { NAIL_SERVICES, MASSAGE_SERVICES, EYELASH_SERVICES, EYEBROW_SERVICES, TIME_SLOTS, formatTime, type Service } from '@/lib/types'
 
 const schema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -24,7 +24,7 @@ type Step = 'category' | 'service' | 'datetime' | 'details' | 'confirm' | 'succe
 
 export default function BookingPage() {
   const [step, setStep] = useState<Step>('category')
-  const [category, setCategory] = useState<'nail' | 'massage' | null>(null)
+  const [category, setCategory] = useState<'nail' | 'massage' | 'eyelash' | 'eyebrow' | null>(null)
   const [service, setService] = useState<Service | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
@@ -55,7 +55,8 @@ export default function BookingPage() {
       .finally(() => setLoadingSlots(false))
   }, [selectedDate])
 
-  const services = category === 'nail' ? NAIL_SERVICES : MASSAGE_SERVICES
+  const servicesMap = { nail: NAIL_SERVICES, massage: MASSAGE_SERVICES, eyelash: EYELASH_SERVICES, eyebrow: EYEBROW_SERVICES }
+  const services = category ? servicesMap[category] : []
 
   const onSubmit = async (data: FormData) => {
     if (!service || !selectedDate || !selectedTime) return
@@ -128,6 +129,8 @@ export default function BookingPage() {
                 {[
                   { id: 'nail' as const, label: 'Nail Services', desc: 'Manicure, pedicure, gel, acrylics & nail art', emoji: '💅' },
                   { id: 'massage' as const, label: 'Massage', desc: 'Swedish, deep tissue, hot stone & more', emoji: '🌿' },
+                  { id: 'eyelash' as const, label: 'Eyelashes', desc: 'Extensions, infills, lash lift & tint', emoji: '✨' },
+                  { id: 'eyebrow' as const, label: 'Eyebrows', desc: 'Wax, tint, threading, lamination & HD brows', emoji: '🪄' },
                 ].map(opt => (
                   <motion.button
                     key={opt.id}
@@ -152,7 +155,7 @@ export default function BookingPage() {
                 <ChevronLeft size={15} /> Back
               </button>
               <h2 className="heading-md mb-2">Choose Your Service</h2>
-              <p className="text-cream/40 mb-8">{category === 'nail' ? 'Nail' : 'Massage'} services available</p>
+              <p className="text-cream/40 mb-8">{{ nail: 'Nail', massage: 'Massage', eyelash: 'Eyelash', eyebrow: 'Eyebrow' }[category!]} services available</p>
               <div className="space-y-2">
                 {services.map((svc) => (
                   <motion.button
@@ -304,7 +307,7 @@ export default function BookingPage() {
                 <div className="space-y-4">
                   {[
                     { label: 'Service', value: service?.name },
-                    { label: 'Category', value: category === 'nail' ? 'Nail Services' : 'Massage' },
+                    { label: 'Category', value: { nail: 'Nail Services', massage: 'Massage', eyelash: 'Eyelashes', eyebrow: 'Eyebrows' }[category!] },
                     { label: 'Date', value: selectedDate ? format(selectedDate, 'EEEE, d MMMM yyyy') : '' },
                     { label: 'Time', value: selectedTime ? formatTime(selectedTime) : '' },
                     { label: 'Duration', value: `${service?.duration} minutes` },

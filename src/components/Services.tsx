@@ -4,8 +4,8 @@ import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useInView } from 'framer-motion'
 import { useRef } from 'react'
-import { Sparkles, Hand, Clock, Star } from 'lucide-react'
-import { NAIL_SERVICES, MASSAGE_SERVICES, type Service } from '@/lib/types'
+import { Sparkles, Hand, Clock, Star, Eye, Feather } from 'lucide-react'
+import { NAIL_SERVICES, MASSAGE_SERVICES, EYELASH_SERVICES, EYEBROW_SERVICES, type Service } from '@/lib/types'
 import Link from 'next/link'
 
 function ServiceCard({ service, index }: { service: Service; index: number }) {
@@ -51,11 +51,12 @@ function ServiceCard({ service, index }: { service: Service; index: number }) {
 }
 
 export default function Services() {
-  const [activeTab, setActiveTab] = useState<'nail' | 'massage'>('nail')
+  const [activeTab, setActiveTab] = useState<'nail' | 'massage' | 'eyelash' | 'eyebrow'>('nail')
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
 
-  const services = activeTab === 'nail' ? NAIL_SERVICES : MASSAGE_SERVICES
+  const servicesMap = { nail: NAIL_SERVICES, massage: MASSAGE_SERVICES, eyelash: EYELASH_SERVICES, eyebrow: EYEBROW_SERVICES }
+  const services = servicesMap[activeTab]
 
   return (
     <section id="services" className="py-28 bg-background" ref={ref}>
@@ -94,10 +95,12 @@ export default function Services() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="flex justify-center mb-12"
         >
-          <div className="flex border border-border">
+          <div className="flex flex-wrap justify-center border border-border">
             {([
               { id: 'nail' as const, label: 'Nail Services', Icon: Hand },
               { id: 'massage' as const, label: 'Massage', Icon: Sparkles },
+              { id: 'eyelash' as const, label: 'Eyelashes', Icon: Eye },
+              { id: 'eyebrow' as const, label: 'Eyebrows', Icon: Feather },
             ] as const).map(({ id, label, Icon }) => (
               <button
                 key={id}
