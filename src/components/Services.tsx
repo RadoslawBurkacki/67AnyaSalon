@@ -1,11 +1,9 @@
 'use client'
 
-import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
-import { useInView } from 'framer-motion'
-import { useRef } from 'react'
+import { useState, useEffect, useRef } from 'react'
+import { motion, AnimatePresence, useInView } from 'framer-motion'
 import { Sparkles, Hand, Clock, Star, Eye, Feather } from 'lucide-react'
-import { NAIL_SERVICES, MASSAGE_SERVICES, EYELASH_SERVICES, EYEBROW_SERVICES, type Service } from '@/lib/types'
+import { type Service } from '@/lib/types'
 import Link from 'next/link'
 
 function ServiceCard({ service, index }: { service: Service; index: number }) {
@@ -38,7 +36,6 @@ function ServiceCard({ service, index }: { service: Service; index: number }) {
         <span>{service.duration} min</span>
       </div>
 
-      {/* Gold bottom line on hover */}
       <motion.div
         className="absolute bottom-0 left-0 h-px bg-gold"
         initial={{ scaleX: 0 }}
@@ -52,11 +49,19 @@ function ServiceCard({ service, index }: { service: Service; index: number }) {
 
 export default function Services() {
   const [activeTab, setActiveTab] = useState<'nail' | 'massage' | 'eyelash' | 'eyebrow'>('nail')
+  const [services, setServices] = useState<Service[]>([])
+  const [loadingServices, setLoadingServices] = useState(false)
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: '-100px' })
 
-  const servicesMap = { nail: NAIL_SERVICES, massage: MASSAGE_SERVICES, eyelash: EYELASH_SERVICES, eyebrow: EYEBROW_SERVICES }
-  const services = servicesMap[activeTab]
+  useEffect(() => {
+    setLoadingServices(true)
+    fetch(`/api/services?category=${activeTab}`)
+      .then(r => r.json())
+      .then(({ services: svcs }) => setServices(svcs ?? []))
+      .catch(() => setServices([]))
+      .finally(() => setLoadingServices(false))
+  }, [activeTab])
 
   return (
     <section id="services" className="py-28 bg-background" ref={ref}>
@@ -128,11 +133,20 @@ export default function Services() {
             transition={{ duration: 0.25 }}
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-px bg-border"
           >
-            {services.map((service, i) => (
-              <div key={service.id} className="bg-background">
-                <ServiceCard service={service} index={i} />
-              </div>
-            ))}
+            {loadingServices
+              ? Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="bg-background p-6 animate-pulse">
+                    <div className="h-5 bg-surface rounded mb-3 w-3/4" />
+                    <div className="h-3 bg-surface rounded mb-2 w-full" />
+                    <div className="h-3 bg-surface rounded w-2/3" />
+                  </div>
+                ))
+              : services.map((service, i) => (
+                  <div key={service.id} className="bg-background">
+                    <ServiceCard service={service} index={i} />
+                  </div>
+                ))
+            }
           </motion.div>
         </AnimatePresence>
 

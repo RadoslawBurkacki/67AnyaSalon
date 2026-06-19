@@ -10,7 +10,7 @@ import 'react-day-picker/dist/style.css'
 import { format, isBefore, startOfDay, addDays } from 'date-fns'
 import { ChevronLeft, CheckCircle, Loader2, AlertCircle } from 'lucide-react'
 import Link from 'next/link'
-import { NAIL_SERVICES, MASSAGE_SERVICES, EYELASH_SERVICES, EYEBROW_SERVICES, TIME_SLOTS, formatTime, type Service } from '@/lib/types'
+import { TIME_SLOTS, formatTime, type Service } from '@/lib/types'
 
 const schema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -29,6 +29,8 @@ export default function BookingPage() {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
   const [bookedSlots, setBookedSlots] = useState<string[]>([])
+  const [services, setServices] = useState<Service[]>([])
+  const [loadingServices, setLoadingServices] = useState(false)
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -43,6 +45,17 @@ export default function BookingPage() {
     { before: addDays(today, 1) },
     ...(closedDays.length > 0 ? [{ dayOfWeek: closedDays }] : []),
   ]
+
+  // Fetch services when category changes
+  useEffect(() => {
+    if (!category) return
+    setLoadingServices(true)
+    fetch(`/api/services?category=${category}`)
+      .then(r => r.json())
+      .then(({ services: svcs }) => setServices(svcs ?? []))
+      .catch(() => setServices([]))
+      .finally(() => setLoadingServices(false))
+  }, [category])
 
   // Fetch working days once on mount
   useEffect(() => {
@@ -68,9 +81,6 @@ export default function BookingPage() {
       .catch(() => setBookedSlots([]))
       .finally(() => setLoadingSlots(false))
   }, [selectedDate])
-
-  const servicesMap = { nail: NAIL_SERVICES, massage: MASSAGE_SERVICES, eyelash: EYELASH_SERVICES, eyebrow: EYEBROW_SERVICES }
-  const services = category ? servicesMap[category] : []
 
   const onSubmit = async (data: FormData) => {
     if (!service || !selectedDate || !selectedTime) return
@@ -171,7 +181,14 @@ export default function BookingPage() {
               <h2 className="heading-md mb-2">Choose Your Service</h2>
               <p className="text-cream/40 mb-8">{{ nail: 'Nail', massage: 'Massage', eyelash: 'Eyelash', eyebrow: 'Eyebrow' }[category!]} services available</p>
               <div className="space-y-2">
-                {services.map((svc) => (
+                {loadingServices ? (
+                  Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="w-full p-5 border border-border bg-surface animate-pulse">
+                      <div className="h-4 bg-elevated rounded w-2/5 mb-2" />
+                      <div className="h-3 bg-elevated rounded w-3/5" />
+                    </div>
+                  ))
+                ) : services.map((svc) => (
                   <motion.button
                     key={svc.id}
                     whileHover={{ x: 4 }}

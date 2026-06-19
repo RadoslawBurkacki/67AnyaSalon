@@ -5,11 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { type Booking, TIME_SLOTS, formatTime } from '@/lib/types'
-import { CheckCircle, XCircle, Clock, ChevronLeft, ChevronRight, LogOut, RefreshCw, Calendar, List, Settings, CalendarClock } from 'lucide-react'
+import { CheckCircle, XCircle, Clock, ChevronLeft, ChevronRight, LogOut, RefreshCw, Calendar, List, Settings, CalendarClock, Scissors, Plus, Trash2 } from 'lucide-react'
+import type { Service } from '@/lib/types'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-type View = 'calendar' | 'list' | 'settings' | 'schedule'
+type View = 'calendar' | 'list' | 'settings' | 'schedule' | 'services'
+type ServiceCategory = 'nail' | 'massage' | 'eyelash' | 'eyebrow'
 
 const STATUS_STYLES = {
   pending: 'text-amber-400 border-amber-400/30 bg-amber-400/10',
@@ -43,6 +45,11 @@ export default function AdminPage() {
   const [savingSchedule, setSavingSchedule] = useState(false)
   const [scheduleSaved, setScheduleSaved] = useState(false)
   const [newBookingAlert, setNewBookingAlert] = useState(false)
+  const [adminServices, setAdminServices] = useState<Service[]>([])
+  const [adminServicesCategory, setAdminServicesCategory] = useState<ServiceCategory>('nail')
+  const [loadingAdminServices, setLoadingAdminServices] = useState(false)
+  const [serviceForm, setServiceForm] = useState({ name: '', description: '', duration: '60', price: '', popular: false })
+  const [addingService, setAddingService] = useState(false)
 
   const fetchBookings = useCallback(async () => {
     setLoading(true)
@@ -96,6 +103,16 @@ export default function AdminPage() {
       })
       .catch(() => setAdminNotifications(true))
   }, [])
+
+  useEffect(() => {
+    if (view !== 'services') return
+    setLoadingAdminServices(true)
+    fetch(`/api/services?category=${adminServicesCategory}`)
+      .then(r => r.json())
+      .then(({ services }) => setAdminServices(services ?? []))
+      .catch(() => setAdminServices([]))
+      .finally(() => setLoadingAdminServices(false))
+  }, [view, adminServicesCategory])
 
   const authHeaders = async () => {
     const { data: { session } } = await supabase.auth.getSession()
@@ -216,13 +233,14 @@ export default function AdminPage() {
         {/* View toggle */}
         <div className="flex items-center gap-4 mb-6">
           <h1 className="font-serif text-2xl text-cream">
-            {view === 'settings' ? 'Settings' : view === 'schedule' ? 'Schedule' : 'Bookings'}
+            {view === 'settings' ? 'Settings' : view === 'schedule' ? 'Schedule' : view === 'services' ? 'Services' : 'Bookings'}
           </h1>
-          <div className="flex border border-border ml-auto">
+          <div className="flex flex-wrap border border-border ml-auto">
             {([
               { id: 'calendar' as const, Icon: Calendar, label: 'Calendar' },
               { id: 'list' as const, Icon: List, label: 'List' },
               { id: 'schedule' as const, Icon: CalendarClock, label: 'Schedule' },
+              { id: 'services' as const, Icon: Scissors, label: 'Services' },
               { id: 'settings' as const, Icon: Settings, label: 'Settings' },
             ] as const).map(({ id, Icon, label }) => (
               <button
@@ -372,6 +390,169 @@ export default function AdminPage() {
                   className="mt-6 btn-primary disabled:opacity-50"
                 >
                   {scheduleSaved ? 'Saved' : savingSchedule ? 'Saving…' : 'Save Schedule'}
+                </button>
+              </div>
+            </div>
+          )
+        })()}
+
+        {/* SERVICES VIEW */}
+        {view === 'services' && (() => {
+          const CATEGORY_LABELS: Record<ServiceCategory, string> = {
+            nail: 'Nail Services',
+            massage: 'Massage',
+            eyelash: 'Eyelashes',
+            eyebrow: 'Eyebrows',
+          }
+
+          const addService = async () => {
+            if (!serviceForm.name || !serviceForm.price || !serviceForm.duration) return
+            setAddingService(true)
+            const headers = await authHeaders()
+            const res = await fetch('/api/services', {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({
+                category: adminServicesCategory,
+                name: serviceForm.name,
+                description: serviceForm.description,
+                duration: parseInt(serviceForm.duration),
+                price: parseFloat(serviceForm.price),
+                popular: serviceForm.popular,
+              }),
+            })
+            if (res.ok) {
+              const { service } = await res.json()
+              setAdminServices(prev => [...prev, service])
+              setServiceForm({ name: '', description: '', duration: '60', price: '', popular: false })
+            }
+            setAddingService(false)
+          }
+
+          const deleteService = async (id: string) => {
+            const headers = await authHeaders()
+            const res = await fetch('/api/services', {
+              method: 'DELETE',
+              headers,
+              body: JSON.stringify({ id }),
+            })
+            if (res.ok) setAdminServices(prev => prev.filter(s => s.id !== id))
+          }
+
+          return (
+            <div className="max-w-2xl space-y-6">
+              {/* Category tabs */}
+              <div className="flex border border-border">
+                {(Object.keys(CATEGORY_LABELS) as ServiceCategory[]).map(cat => (
+                  <button
+                    key={cat}
+                    onClick={() => setAdminServicesCategory(cat)}
+                    className={`flex-1 py-3 text-sm transition-all duration-200 ${
+                      adminServicesCategory === cat
+                        ? 'bg-gold text-background font-medium'
+                        : 'text-cream/50 hover:text-cream'
+                    }`}
+                  >
+                    {CATEGORY_LABELS[cat]}
+                  </button>
+                ))}
+              </div>
+
+              {/* Service list */}
+              <div className="bg-surface border border-border divide-y divide-border">
+                <div className="px-5 py-3 flex items-center gap-2">
+                  <h2 className="font-serif text-base text-cream">{CATEGORY_LABELS[adminServicesCategory]}</h2>
+                  <span className="text-cream/30 text-sm ml-auto">{adminServices.length} service{adminServices.length !== 1 ? 's' : ''}</span>
+                </div>
+
+                {loadingAdminServices ? (
+                  <div className="p-5 text-cream/40 text-sm">Loading…</div>
+                ) : adminServices.length === 0 ? (
+                  <div className="p-5 text-cream/40 text-sm">No services yet.</div>
+                ) : adminServices.map(svc => (
+                  <div key={svc.id} className="flex items-start gap-4 px-5 py-4 group hover:bg-elevated transition-colors">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-0.5">
+                        <span className="font-medium text-cream text-sm">{svc.name}</span>
+                        {svc.popular && <span className="text-xs text-gold border border-gold/30 px-1.5 py-px">Popular</span>}
+                      </div>
+                      <p className="text-cream/40 text-xs truncate">{svc.description}</p>
+                      <p className="text-cream/30 text-xs mt-1">{svc.duration} min</p>
+                    </div>
+                    <span className="text-gold text-sm shrink-0">£{Number(svc.price).toFixed(2)}</span>
+                    <button
+                      onClick={() => deleteService(svc.id)}
+                      className="text-cream/20 hover:text-red-400 transition-colors shrink-0 opacity-0 group-hover:opacity-100"
+                      title="Delete service"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              {/* Add service form */}
+              <div className="bg-surface border border-border p-6 space-y-4">
+                <h2 className="font-serif text-base text-cream mb-4">Add New Service</h2>
+                <div>
+                  <label className="text-cream/50 text-xs tracking-wider uppercase block mb-1.5">Name *</label>
+                  <input
+                    value={serviceForm.name}
+                    onChange={e => setServiceForm(f => ({ ...f, name: e.target.value }))}
+                    placeholder="e.g. Gel Manicure"
+                    className="w-full bg-background border border-border text-cream px-3 py-2.5 text-sm focus:outline-none focus:border-gold/50 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="text-cream/50 text-xs tracking-wider uppercase block mb-1.5">Description</label>
+                  <input
+                    value={serviceForm.description}
+                    onChange={e => setServiceForm(f => ({ ...f, description: e.target.value }))}
+                    placeholder="Short description of the service"
+                    className="w-full bg-background border border-border text-cream px-3 py-2.5 text-sm focus:outline-none focus:border-gold/50 transition-colors"
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="text-cream/50 text-xs tracking-wider uppercase block mb-1.5">Duration (min) *</label>
+                    <input
+                      type="number"
+                      value={serviceForm.duration}
+                      onChange={e => setServiceForm(f => ({ ...f, duration: e.target.value }))}
+                      min="5"
+                      step="5"
+                      className="w-full bg-background border border-border text-cream px-3 py-2.5 text-sm focus:outline-none focus:border-gold/50 transition-colors"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-cream/50 text-xs tracking-wider uppercase block mb-1.5">Price (£) *</label>
+                    <input
+                      type="number"
+                      value={serviceForm.price}
+                      onChange={e => setServiceForm(f => ({ ...f, price: e.target.value }))}
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      className="w-full bg-background border border-border text-cream px-3 py-2.5 text-sm focus:outline-none focus:border-gold/50 transition-colors"
+                    />
+                  </div>
+                </div>
+                <label className="flex items-center gap-3 cursor-pointer select-none">
+                  <div
+                    onClick={() => setServiceForm(f => ({ ...f, popular: !f.popular }))}
+                    className={`w-10 h-5 relative transition-colors duration-200 ${serviceForm.popular ? 'bg-gold' : 'bg-border'}`}
+                  >
+                    <div className={`absolute top-0.5 w-4 h-4 bg-background transition-all duration-200 ${serviceForm.popular ? 'left-5' : 'left-0.5'}`} />
+                  </div>
+                  <span className="text-cream/60 text-sm">Mark as popular</span>
+                </label>
+                <button
+                  onClick={addService}
+                  disabled={addingService || !serviceForm.name || !serviceForm.price || !serviceForm.duration}
+                  className="flex items-center gap-2 btn-primary disabled:opacity-50"
+                >
+                  <Plus size={15} />
+                  {addingService ? 'Adding…' : 'Add Service'}
                 </button>
               </div>
             </div>
