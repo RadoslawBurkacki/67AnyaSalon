@@ -581,12 +581,29 @@ export default function AdminPage() {
                             </div>
                             <div>
                               <label className="text-cream/40 text-xs block mb-1">End date (optional)</label>
-                              <input
-                                type="date"
-                                value={discountForm.ends_at}
-                                onChange={e => setDiscountForm(f => ({ ...f, ends_at: e.target.value }))}
-                                className="bg-background border border-border text-cream px-3 py-2 text-sm focus:outline-none focus:border-gold/50"
-                              />
+                              <div className="flex items-center gap-1.5">
+                                <input
+                                  type="date"
+                                  value={discountForm.ends_at}
+                                  onChange={e => setDiscountForm(f => ({ ...f, ends_at: e.target.value }))}
+                                  className="bg-background border border-border text-cream px-3 py-2 text-sm focus:outline-none focus:border-gold/50"
+                                />
+                                {[1, 7].map(days => {
+                                  const d = new Date()
+                                  d.setDate(d.getDate() + days)
+                                  const val = d.toISOString().slice(0, 10)
+                                  return (
+                                    <button
+                                      key={days}
+                                      type="button"
+                                      onClick={() => setDiscountForm(f => ({ ...f, ends_at: val }))}
+                                      className="text-xs border border-border text-cream/40 hover:text-gold hover:border-gold/40 px-2 py-2 transition-colors"
+                                    >
+                                      {days}d
+                                    </button>
+                                  )
+                                })}
+                              </div>
                             </div>
                             <button
                               onClick={() => saveDiscount(svc.id)}
