@@ -114,7 +114,9 @@ insert into settings (key, value) values
   ('hours_sat',                   ''),
   ('hours_sun',                   ''),
   ('social_instagram',            ''),
-  ('social_facebook',             '')
+  ('social_facebook',             ''),
+  ('schedule_days',               '1,2,3,4,5,6'),
+  ('schedule_slots',              '09:00,09:30,10:00,10:30,11:00,11:30,12:00,12:30,13:00,13:30,14:00,14:30,15:00,15:30,16:00,16:30,17:00')
   on conflict (key) do nothing;
 
 -- ============================================================

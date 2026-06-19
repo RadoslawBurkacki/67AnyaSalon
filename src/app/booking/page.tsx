@@ -32,6 +32,7 @@ export default function BookingPage() {
   const [loadingSlots, setLoadingSlots] = useState(false)
   const [submitting, setSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [closedDays, setClosedDays] = useState<number[]>([0]) // default: Sunday closed
 
   const { register, handleSubmit, formState: { errors } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -40,8 +41,21 @@ export default function BookingPage() {
   const today = startOfDay(new Date())
   const disabledDays = [
     { before: addDays(today, 1) },
-    { dayOfWeek: [0] }, // Sunday closed
+    ...(closedDays.length > 0 ? [{ dayOfWeek: closedDays }] : []),
   ]
+
+  // Fetch working days once on mount
+  useEffect(() => {
+    fetch('/api/settings')
+      .then(r => r.json())
+      .then(({ settings: s }) => {
+        const workingDays: number[] = s?.schedule_days
+          ? s.schedule_days.split(',').map(Number)
+          : [1, 2, 3, 4, 5, 6]
+        setClosedDays([0,1,2,3,4,5,6].filter(d => !workingDays.includes(d)))
+      })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     if (!selectedDate) return

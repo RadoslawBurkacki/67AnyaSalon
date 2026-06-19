@@ -4,12 +4,12 @@ import { useEffect, useState, useCallback } from 'react'
 import { motion } from 'framer-motion'
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths } from 'date-fns'
 import { supabase } from '@/lib/supabase'
-import { type Booking } from '@/lib/types'
-import { CheckCircle, XCircle, Clock, ChevronLeft, ChevronRight, LogOut, RefreshCw, Calendar, List, Settings } from 'lucide-react'
+import { type Booking, TIME_SLOTS, formatTime } from '@/lib/types'
+import { CheckCircle, XCircle, Clock, ChevronLeft, ChevronRight, LogOut, RefreshCw, Calendar, List, Settings, CalendarClock } from 'lucide-react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
-type View = 'calendar' | 'list' | 'settings'
+type View = 'calendar' | 'list' | 'settings' | 'schedule'
 
 const STATUS_STYLES = {
   pending: 'text-amber-400 border-amber-400/30 bg-amber-400/10',
@@ -38,6 +38,10 @@ export default function AdminPage() {
   const [savingSiteInfo, setSavingSiteInfo] = useState(false)
   const [siteInfoSaved, setSiteInfoSaved] = useState(false)
   const [settingsTab, setSettingsTab] = useState<'general' | 'emails'>('general')
+  const [workingDays, setWorkingDays] = useState<number[]>([1,2,3,4,5,6])
+  const [workingSlots, setWorkingSlots] = useState<string[]>([...TIME_SLOTS])
+  const [savingSchedule, setSavingSchedule] = useState(false)
+  const [scheduleSaved, setScheduleSaved] = useState(false)
 
   const fetchBookings = useCallback(async () => {
     setLoading(true)
@@ -54,6 +58,8 @@ export default function AdminPage() {
       .then(({ settings: s }) => {
         setAdminNotifications(s?.admin_booking_notifications !== 'false')
         setEmailConfig({ admin_email: s?.admin_email ?? '', from_email: s?.from_email ?? '' })
+        setWorkingDays(s?.schedule_days ? s.schedule_days.split(',').map(Number) : [1,2,3,4,5,6])
+        setWorkingSlots(s?.schedule_slots ? s.schedule_slots.split(',') : [...TIME_SLOTS])
         setSiteInfo({
           site_address: s?.site_address ?? '',
           site_phone: s?.site_phone ?? '',
@@ -173,11 +179,14 @@ export default function AdminPage() {
 
         {/* View toggle */}
         <div className="flex items-center gap-4 mb-6">
-          <h1 className="font-serif text-2xl text-cream">{view === 'settings' ? 'Settings' : 'Bookings'}</h1>
+          <h1 className="font-serif text-2xl text-cream">
+            {view === 'settings' ? 'Settings' : view === 'schedule' ? 'Schedule' : 'Bookings'}
+          </h1>
           <div className="flex border border-border ml-auto">
             {([
               { id: 'calendar' as const, Icon: Calendar, label: 'Calendar' },
               { id: 'list' as const, Icon: List, label: 'List' },
+              { id: 'schedule' as const, Icon: CalendarClock, label: 'Schedule' },
               { id: 'settings' as const, Icon: Settings, label: 'Settings' },
             ] as const).map(({ id, Icon, label }) => (
               <button
@@ -269,6 +278,69 @@ export default function AdminPage() {
             </div>
           </div>
         )}
+
+        {/* SCHEDULE VIEW */}
+        {view === 'schedule' && (() => {
+          const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
+          const toggleDay = (d: number) =>
+            setWorkingDays(prev => prev.includes(d) ? prev.filter(x => x !== d) : [...prev, d].sort((a,b) => a-b))
+          const toggleSlot = (slot: string) =>
+            setWorkingSlots(prev => prev.includes(slot) ? prev.filter(s => s !== slot) : [...prev, slot].sort())
+          return (
+            <div className="max-w-lg space-y-6">
+              <div className="bg-surface border border-border p-6">
+                <h2 className="font-serif text-lg text-cream mb-1">Working Days</h2>
+                <p className="text-cream/40 text-sm mb-5">Select which days the salon is open for bookings.</p>
+                <div className="flex gap-2 flex-wrap">
+                  {DAY_LABELS.map((label, d) => (
+                    <button
+                      key={d}
+                      onClick={() => toggleDay(d)}
+                      className={`px-4 py-2 text-sm border transition-all duration-200 ${
+                        workingDays.includes(d)
+                          ? 'bg-gold border-gold text-background font-medium'
+                          : 'border-border text-cream/40 hover:text-cream hover:border-gold/40'
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="bg-surface border border-border p-6">
+                <h2 className="font-serif text-lg text-cream mb-1">Working Hours</h2>
+                <p className="text-cream/40 text-sm mb-5">Select which time slots are available for booking.</p>
+                <div className="grid grid-cols-3 sm:grid-cols-4 gap-2">
+                  {TIME_SLOTS.map(slot => (
+                    <button
+                      key={slot}
+                      onClick={() => toggleSlot(slot)}
+                      className={`py-2.5 px-3 text-sm border transition-all duration-200 ${
+                        workingSlots.includes(slot)
+                          ? 'bg-gold border-gold text-background font-medium'
+                          : 'border-border text-cream/40 hover:text-cream hover:border-gold/40'
+                      }`}
+                    >
+                      {formatTime(slot)}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => saveSettings(
+                    { schedule_days: workingDays.join(','), schedule_slots: workingSlots.join(',') },
+                    setSavingSchedule, setScheduleSaved
+                  )}
+                  disabled={savingSchedule}
+                  className="mt-6 btn-primary disabled:opacity-50"
+                >
+                  {scheduleSaved ? 'Saved' : savingSchedule ? 'Saving…' : 'Save Schedule'}
+                </button>
+              </div>
+            </div>
+          )
+        })()}
 
         {/* SETTINGS VIEW */}
         {view === 'settings' && (
