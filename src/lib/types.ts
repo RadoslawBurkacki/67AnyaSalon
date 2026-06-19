@@ -31,6 +31,7 @@ export interface Service {
   duration: number
   price: number
   popular?: boolean
+  sort_order?: number
   discount_price?: number | null
   discount_ends_at?: string | null
 }

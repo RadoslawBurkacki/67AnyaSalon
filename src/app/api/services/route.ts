@@ -56,6 +56,11 @@ export async function PATCH(req: NextRequest) {
   if ('discount_price' in body) patch.discount_price = body.discount_price ?? null
   if ('discount_ends_at' in body) patch.discount_ends_at = body.discount_ends_at ?? null
   if ('popular' in body) patch.popular = !!body.popular
+  if ('name' in body) patch.name = body.name
+  if ('description' in body) patch.description = body.description
+  if ('duration' in body) patch.duration = Number(body.duration)
+  if ('price' in body) patch.price = Number(body.price)
+  if ('sort_order' in body) patch.sort_order = Number(body.sort_order)
 
   const { data, error } = await authedClient(token)
     .from('services')

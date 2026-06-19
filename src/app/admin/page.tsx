@@ -5,7 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { type Booking, TIME_SLOTS, formatTime } from '@/lib/types'
-import { CheckCircle, XCircle, Clock, ChevronLeft, ChevronRight, LogOut, RefreshCw, Calendar, List, Settings, CalendarClock, Scissors, Plus, Trash2, Star } from 'lucide-react'
+import { CheckCircle, XCircle, Clock, ChevronLeft, ChevronRight, LogOut, RefreshCw, Calendar, List, Settings, CalendarClock, Scissors, Plus, Trash2, Star, Pencil, ArrowUp, ArrowDown } from 'lucide-react'
 import type { Service } from '@/lib/types'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -53,6 +53,9 @@ export default function AdminPage() {
   const [discountServiceId, setDiscountServiceId] = useState<string | null>(null)
   const [discountForm, setDiscountForm] = useState({ price: '', ends_at: '' })
   const [savingDiscount, setSavingDiscount] = useState(false)
+  const [editServiceId, setEditServiceId] = useState<string | null>(null)
+  const [editForm, setEditForm] = useState({ name: '', description: '', duration: '', price: '' })
+  const [savingEdit, setSavingEdit] = useState(false)
 
   const fetchBookings = useCallback(async () => {
     setLoading(true)
@@ -487,6 +490,49 @@ export default function AdminPage() {
             if (res.ok) setAdminServices(prev => prev.map(s => s.id === svc.id ? { ...s, popular: !svc.popular } : s))
           }
 
+          const saveEdit = async (id: string) => {
+            if (!editForm.name || !editForm.duration || !editForm.price) return
+            setSavingEdit(true)
+            const headers = await authHeaders()
+            const res = await fetch('/api/services', {
+              method: 'PATCH',
+              headers,
+              body: JSON.stringify({
+                id,
+                name: editForm.name,
+                description: editForm.description,
+                duration: parseInt(editForm.duration),
+                price: parseFloat(editForm.price),
+              }),
+            })
+            if (res.ok) {
+              const { service } = await res.json()
+              setAdminServices(prev => prev.map(s => s.id === id ? service : s))
+              setEditServiceId(null)
+            }
+            setSavingEdit(false)
+          }
+
+          const moveService = async (svc: Service, dir: 'up' | 'down') => {
+            const idx = adminServices.findIndex(s => s.id === svc.id)
+            const targetIdx = dir === 'up' ? idx - 1 : idx + 1
+            if (targetIdx < 0 || targetIdx >= adminServices.length) return
+            const target = adminServices[targetIdx]
+            const headers = await authHeaders()
+            await Promise.all([
+              fetch('/api/services', { method: 'PATCH', headers, body: JSON.stringify({ id: svc.id, sort_order: target.sort_order }) }),
+              fetch('/api/services', { method: 'PATCH', headers, body: JSON.stringify({ id: target.id, sort_order: svc.sort_order }) }),
+            ])
+            setAdminServices(prev => {
+              const updated = prev.map(s => {
+                if (s.id === svc.id) return { ...s, sort_order: target.sort_order }
+                if (s.id === target.id) return { ...s, sort_order: svc.sort_order }
+                return s
+              })
+              return updated.sort((a, b) => ((a.sort_order ?? 0) - (b.sort_order ?? 0)))
+            })
+          }
+
           const isDiscountActive = (svc: { discount_price?: number | null; discount_ends_at?: string | null }) =>
             !!svc.discount_price && (!svc.discount_ends_at || new Date(svc.discount_ends_at) > new Date())
 
@@ -523,9 +569,28 @@ export default function AdminPage() {
                 ) : adminServices.map(svc => {
                   const active = isDiscountActive(svc)
                   const discountOpen = discountServiceId === svc.id
+                  const editOpen = editServiceId === svc.id
+                  const idx = adminServices.indexOf(svc)
                   return (
                     <div key={svc.id}>
-                      <div className="flex items-start gap-4 px-5 py-4 group hover:bg-elevated transition-colors">
+                      <div className="flex items-start gap-3 px-4 py-4 group hover:bg-elevated transition-colors">
+                        {/* Reorder buttons */}
+                        <div className="flex flex-col gap-0.5 pt-1 shrink-0">
+                          <button
+                            onClick={() => moveService(svc, 'up')}
+                            disabled={idx === 0}
+                            className="text-cream/20 hover:text-gold disabled:opacity-10 transition-colors"
+                          >
+                            <ArrowUp size={13} />
+                          </button>
+                          <button
+                            onClick={() => moveService(svc, 'down')}
+                            disabled={idx === adminServices.length - 1}
+                            className="text-cream/20 hover:text-gold disabled:opacity-10 transition-colors"
+                          >
+                            <ArrowDown size={13} />
+                          </button>
+                        </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2 mb-0.5">
                             <span className="font-medium text-cream text-sm">{svc.name}</span>
@@ -549,14 +614,29 @@ export default function AdminPage() {
                             title={svc.popular ? 'Remove from favourites' : 'Mark as favourite'}
                             className="transition-colors"
                           >
-                            <Star
-                              size={15}
-                              className={svc.popular ? 'text-gold fill-gold' : 'text-cream/20 hover:text-gold'}
-                            />
+                            <Star size={15} className={svc.popular ? 'text-gold fill-gold' : 'text-cream/20 hover:text-gold'} />
+                          </button>
+                          <button
+                            onClick={() => {
+                              if (editOpen) { setEditServiceId(null); return }
+                              setDiscountServiceId(null)
+                              setEditServiceId(svc.id)
+                              setEditForm({
+                                name: svc.name,
+                                description: svc.description,
+                                duration: String(svc.duration),
+                                price: String(svc.price),
+                              })
+                            }}
+                            title="Edit service"
+                            className={`transition-colors ${editOpen ? 'text-gold' : 'text-cream/20 hover:text-gold opacity-0 group-hover:opacity-100'}`}
+                          >
+                            <Pencil size={14} />
                           </button>
                           <button
                             onClick={() => {
                               if (discountOpen) { setDiscountServiceId(null); return }
+                              setEditServiceId(null)
                               setDiscountServiceId(svc.id)
                               setDiscountForm({
                                 price: svc.discount_price ? String(svc.discount_price) : '',
@@ -581,6 +661,65 @@ export default function AdminPage() {
                           </button>
                         </div>
                       </div>
+
+                      {editOpen && (
+                        <div className="px-5 pb-5 bg-elevated border-t border-border">
+                          <p className="text-cream/40 text-xs mb-3 pt-4">Edit service details</p>
+                          <div className="space-y-3">
+                            <div>
+                              <label className="text-cream/40 text-xs block mb-1">Name</label>
+                              <input
+                                value={editForm.name}
+                                onChange={e => setEditForm(f => ({ ...f, name: e.target.value }))}
+                                className="w-full bg-background border border-border text-cream px-3 py-2 text-sm focus:outline-none focus:border-gold/50"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-cream/40 text-xs block mb-1">Description</label>
+                              <input
+                                value={editForm.description}
+                                onChange={e => setEditForm(f => ({ ...f, description: e.target.value }))}
+                                className="w-full bg-background border border-border text-cream px-3 py-2 text-sm focus:outline-none focus:border-gold/50"
+                              />
+                            </div>
+                            <div className="flex gap-3">
+                              <div className="flex-1">
+                                <label className="text-cream/40 text-xs block mb-1">Duration (min)</label>
+                                <input
+                                  type="number" min="5" step="5"
+                                  value={editForm.duration}
+                                  onChange={e => setEditForm(f => ({ ...f, duration: e.target.value }))}
+                                  className="w-full bg-background border border-border text-cream px-3 py-2 text-sm focus:outline-none focus:border-gold/50"
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <label className="text-cream/40 text-xs block mb-1">Price (£)</label>
+                                <input
+                                  type="number" min="0" step="0.01"
+                                  value={editForm.price}
+                                  onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))}
+                                  className="w-full bg-background border border-border text-cream px-3 py-2 text-sm focus:outline-none focus:border-gold/50"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex gap-3">
+                              <button
+                                onClick={() => saveEdit(svc.id)}
+                                disabled={savingEdit || !editForm.name || !editForm.duration || !editForm.price}
+                                className="btn-primary text-sm disabled:opacity-50"
+                              >
+                                {savingEdit ? 'Saving…' : 'Save'}
+                              </button>
+                              <button
+                                onClick={() => setEditServiceId(null)}
+                                className="text-sm text-cream/40 hover:text-cream transition-colors"
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      )}
 
                       {discountOpen && (
                         <div className="px-5 pb-5 bg-elevated border-t border-border">
