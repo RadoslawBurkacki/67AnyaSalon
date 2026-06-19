@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState, useCallback } from 'react'
-import { motion } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, isToday, addMonths, subMonths } from 'date-fns'
 import { supabase } from '@/lib/supabase'
 import { type Booking, TIME_SLOTS, formatTime } from '@/lib/types'
@@ -42,6 +42,7 @@ export default function AdminPage() {
   const [workingSlots, setWorkingSlots] = useState<string[]>([...TIME_SLOTS])
   const [savingSchedule, setSavingSchedule] = useState(false)
   const [scheduleSaved, setScheduleSaved] = useState(false)
+  const [newBookingAlert, setNewBookingAlert] = useState(false)
 
   const fetchBookings = useCallback(async () => {
     setLoading(true)
@@ -51,6 +52,27 @@ export default function AdminPage() {
   }, [])
 
   useEffect(() => { fetchBookings() }, [fetchBookings])
+
+  // Realtime subscription — new bookings appear instantly, status changes sync across sessions
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-bookings-live')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'bookings' }, payload => {
+        setBookings(prev =>
+          [...prev, payload.new as Booking].sort((a, b) =>
+            a.date !== b.date ? a.date.localeCompare(b.date) : a.time_slot.localeCompare(b.time_slot)
+          )
+        )
+        setNewBookingAlert(true)
+        setTimeout(() => setNewBookingAlert(false), 4000)
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'bookings' }, payload => {
+        setBookings(prev => prev.map(b => b.id === (payload.new as Booking).id ? payload.new as Booking : b))
+      })
+      .subscribe()
+
+    return () => { supabase.removeChannel(channel) }
+  }, [])
 
   useEffect(() => {
     fetch('/api/settings')
@@ -143,6 +165,20 @@ export default function AdminPage() {
 
   return (
     <div className="min-h-screen bg-background text-cream">
+      {/* New booking toast */}
+      <AnimatePresence>
+        {newBookingAlert && (
+          <motion.div
+            initial={{ opacity: 0, y: -16 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -16 }}
+            className="fixed top-4 left-1/2 -translate-x-1/2 z-50 bg-gold text-background text-sm font-medium px-5 py-2.5 shadow-lg"
+          >
+            New booking received
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Top bar */}
       <div className="border-b border-border">
         <div className="section-container flex items-center justify-between h-16">
