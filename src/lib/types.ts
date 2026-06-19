@@ -5,7 +5,7 @@ export interface Booking {
   name: string
   email: string
   phone: string
-  service_category: 'massage' | 'eyelash' | 'eyebrow'
+  service_category: 'massage' | 'lashes'
   service_name: string
   date: string
   time_slot: string
@@ -25,7 +25,7 @@ export interface BlockedSlot {
 
 export interface Service {
   id: string
-  category: 'massage' | 'eyelash' | 'eyebrow'
+  category: 'massage' | 'lashes'
   name: string
   description: string
   duration: number

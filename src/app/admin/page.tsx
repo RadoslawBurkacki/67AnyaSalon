@@ -11,7 +11,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 
 type View = 'calendar' | 'list' | 'settings' | 'schedule' | 'services'
-type ServiceCategory = 'massage' | 'eyelash' | 'eyebrow'
+type ServiceCategory = 'massage' | 'lashes'
 
 const STATUS_STYLES = {
   pending: 'text-amber-400 border-amber-400/30 bg-amber-400/10',
@@ -46,7 +46,7 @@ export default function AdminPage() {
   const [scheduleSaved, setScheduleSaved] = useState(false)
   const [newBookingAlert, setNewBookingAlert] = useState(false)
   const [adminServices, setAdminServices] = useState<Service[]>([])
-  const [adminServicesCategory, setAdminServicesCategory] = useState<ServiceCategory>('massage')
+  const [adminServicesCategory, setAdminServicesCategory] = useState<ServiceCategory>('lashes')
   const [loadingAdminServices, setLoadingAdminServices] = useState(false)
   const [serviceForm, setServiceForm] = useState({ name: '', description: '', duration: '60', price: '', popular: false })
   const [addingService, setAddingService] = useState(false)
@@ -404,8 +404,7 @@ export default function AdminPage() {
         {view === 'services' && (() => {
           const CATEGORY_LABELS: Record<ServiceCategory, string> = {
             massage: 'Massage',
-            eyelash: 'Eyelashes',
-            eyebrow: 'Eyebrows',
+            lashes: 'Lashes & Brows',
           }
 
           const addService = async () => {

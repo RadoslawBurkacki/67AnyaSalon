@@ -123,14 +123,14 @@ insert into settings (key, value) values
 -- SERVICES TABLE
 -- ============================================================
 
--- Fix service_category constraint to include eyelash & eyebrow
+-- Fix service_category constraint
 alter table bookings drop constraint if exists bookings_service_category_check;
 alter table bookings add constraint bookings_service_category_check
-  check (service_category in ('massage', 'eyelash', 'eyebrow'));
+  check (service_category in ('massage', 'lashes'));
 
 create table if not exists services (
   id          uuid primary key default gen_random_uuid(),
-  category    text not null check (category in ('massage', 'eyelash', 'eyebrow')),
+  category    text not null check (category in ('massage', 'lashes')),
   name        text not null,
   description text not null default '',
   duration    int  not null default 60,
@@ -167,23 +167,14 @@ select * from (values
   ('massage', 'Hot Stone Massage',         'Warm volcanic stones melt away muscle tension',                  90, 100.00, true,  5),
   ('massage', 'Aromatherapy Massage',      'Relaxing massage with premium essential oils',                   60,  75.00, false, 6),
   ('massage', 'Couples Massage',           'Side-by-side relaxation for two',                                60, 130.00, false, 7),
-  ('massage', 'Pamper Package',            'Gel manicure + 60 min Swedish massage',                         120, 110.00, false, 8),
-  ('eyelash', 'Classic Lash Extensions',   'Natural, single-strand extensions for a subtle enhancement',     90,  55.00, false, 1),
-  ('eyelash', 'Hybrid Lash Extensions',    'Mix of classic & volume for a soft, textured look',             105,  70.00, true,  2),
-  ('eyelash', 'Volume Lash Extensions',    'Fluffy, full-volume fans for a dramatic effect',                120,  85.00, true,  3),
-  ('eyelash', 'Mega Volume Lashes',        'Ultra-lush, maximum density lash set',                          150, 100.00, false, 4),
-  ('eyelash', 'Classic Lash Infill',       'Infill for existing classic lash extensions',                    45,  35.00, false, 5),
-  ('eyelash', 'Hybrid / Volume Infill',    'Infill for hybrid or volume lash extensions',                    60,  45.00, false, 6),
-  ('eyelash', 'Lash Lift & Tint',          'Curl, lift and tint your natural lashes for weeks',              60,  50.00, true,  7),
-  ('eyelash', 'Lash Removal',              'Safe removal of existing lash extensions',                       30,  15.00, false, 8),
-  ('eyebrow', 'Brow Wax & Shape',          'Clean, defined brow shape using warm wax',                       20,  15.00, false, 1),
-  ('eyebrow', 'Brow Wax & Tint',           'Wax shape plus tint for colour and definition',                  30,  22.00, true,  2),
-  ('eyebrow', 'Brow Threading',            'Precise hair removal using the threading technique',              20,  15.00, false, 3),
-  ('eyebrow', 'Brow Tint',                 'Colour treatment to enhance and define brow hair',                15,  12.00, false, 4),
-  ('eyebrow', 'Brow Lamination',           'Restructure brow hairs for a full, brushed-up finish',           60,  45.00, true,  5),
-  ('eyebrow', 'Brow Lamination & Tint',    'Lamination with tint for bold, glossy brows',                    75,  55.00, true,  6),
-  ('eyebrow', 'HD Brows',                  'Signature brow design with tint, wax and threading',             60,  50.00, false, 7),
-  ('eyebrow', 'Henna Brows',               'Natural henna tint that stains skin and hair for lasting colour', 45,  35.00, false, 8)
+  ('massage', 'Pamper Package',                        'Gel manicure + 60 min Swedish massage',                                                     120, 110.00, false, 8),
+  ('lashes',  'Classic Lash Extensions',               'Single-strand classic extensions for a natural, subtle look',                               105,  20.00, false, 1),
+  ('lashes',  'Eyelash Extensions + Brow Lamination',  'Full lash set combined with brow lamination — add your preferred lash style in the notes', 180,  60.00, true,  2),
+  ('lashes',  'Double Classic Eyelash Extensions',     'Two layers of classic lash extensions for added fullness',                                  120,  25.00, false, 3),
+  ('lashes',  'Russian Eyelash Extensions',            'Handmade volume fans for a glamorous, full lash look',                                      135,  30.00, true,  4),
+  ('lashes',  'Hybrid Eyelash Extensions',             'A mix of classic and Russian volume for a textured, natural-glam result',                   120,  28.00, false, 5),
+  ('lashes',  'Eyebrow Tint and Wax',                  'Brow tint combined with a clean wax shape',                                                  30,  12.00, false, 6),
+  ('lashes',  'Eyebrow Lamination',                    'Brow lamination with tint and wax included for bold, brushed-up brows',                      50,  25.00, false, 7)
 ) as v(category, name, description, duration, price, popular, sort_order)
 where not exists (select 1 from services limit 1);
 
@@ -201,3 +192,13 @@ where not exists (select 1 from services limit 1);
 -- ============================================================
 alter table services add column if not exists discount_price   decimal(10,2) default null;
 alter table services add column if not exists discount_ends_at timestamptz   default null;
+
+-- Merge eyelash + eyebrow into 'lashes' category
+update services set category = 'lashes' where category in ('eyelash', 'eyebrow');
+alter table services drop constraint if exists services_category_check;
+alter table services add constraint services_category_check
+  check (category in ('massage', 'lashes'));
+alter table bookings drop constraint if exists bookings_service_category_check;
+alter table bookings add constraint bookings_service_category_check
+  check (service_category in ('massage', 'lashes'));
+update bookings set service_category = 'lashes' where service_category in ('eyelash', 'eyebrow');

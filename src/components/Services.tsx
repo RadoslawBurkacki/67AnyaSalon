@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { motion, AnimatePresence, useInView } from 'framer-motion'
-import { Sparkles, Clock, Star, Eye, Feather } from 'lucide-react'
+import { Sparkles, Clock, Star, Eye } from 'lucide-react'
 import { type Service } from '@/lib/types'
 import Link from 'next/link'
 
@@ -61,7 +61,7 @@ function ServiceCard({ service, index }: { service: Service; index: number }) {
 }
 
 export default function Services() {
-  const [activeTab, setActiveTab] = useState<'massage' | 'eyelash' | 'eyebrow'>('massage')
+  const [activeTab, setActiveTab] = useState<'massage' | 'lashes'>('massage')
   const [services, setServices] = useState<Service[]>([])
   const [loadingServices, setLoadingServices] = useState(false)
   const ref = useRef(null)
@@ -116,8 +116,7 @@ export default function Services() {
           <div className="flex flex-wrap justify-center border border-border">
             {([
               { id: 'massage' as const, label: 'Massage', Icon: Sparkles },
-              { id: 'eyelash' as const, label: 'Eyelashes', Icon: Eye },
-              { id: 'eyebrow' as const, label: 'Eyebrows', Icon: Feather },
+              { id: 'lashes' as const, label: 'Lashes & Brows', Icon: Eye },
             ] as const).map(({ id, label, Icon }) => (
               <button
                 key={id}

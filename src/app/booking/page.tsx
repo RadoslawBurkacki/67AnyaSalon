@@ -24,7 +24,7 @@ type Step = 'category' | 'service' | 'datetime' | 'details' | 'confirm' | 'succe
 
 export default function BookingPage() {
   const [step, setStep] = useState<Step>('category')
-  const [category, setCategory] = useState<'massage' | 'eyelash' | 'eyebrow' | null>(null)
+  const [category, setCategory] = useState<'massage' | 'lashes' | null>(null)
   const [service, setService] = useState<Service | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date | undefined>()
   const [selectedTime, setSelectedTime] = useState<string | null>(null)
@@ -152,8 +152,7 @@ export default function BookingPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {[
                   { id: 'massage' as const, label: 'Massage', desc: 'Swedish, deep tissue, hot stone & more', emoji: '🌿' },
-                  { id: 'eyelash' as const, label: 'Eyelashes', desc: 'Extensions, infills, lash lift & tint', emoji: '✨' },
-                  { id: 'eyebrow' as const, label: 'Eyebrows', desc: 'Wax, tint, threading, lamination & HD brows', emoji: '🪄' },
+                  { id: 'lashes' as const, label: 'Lashes & Brows', desc: 'Lash extensions, brow lamination, tint & wax', emoji: '✨' },
                 ].map(opt => (
                   <motion.button
                     key={opt.id}
@@ -178,7 +177,7 @@ export default function BookingPage() {
                 <ChevronLeft size={15} /> Back
               </button>
               <h2 className="heading-md mb-2">Choose Your Service</h2>
-              <p className="text-cream/40 mb-8">{{ massage: 'Massage', eyelash: 'Eyelash', eyebrow: 'Eyebrow' }[category!]} services available</p>
+              <p className="text-cream/40 mb-8">{{ massage: 'Massage', lashes: 'Lashes & Brows' }[category!]} services available</p>
               <div className="space-y-2">
                 {loadingServices ? (
                   Array.from({ length: 4 }).map((_, i) => (
@@ -347,7 +346,7 @@ export default function BookingPage() {
                 <div className="space-y-4">
                   {[
                     { label: 'Service', value: service?.name },
-                    { label: 'Category', value: { massage: 'Massage', eyelash: 'Eyelashes', eyebrow: 'Eyebrows' }[category!] },
+                    { label: 'Category', value: { massage: 'Massage', lashes: 'Lashes & Brows' }[category!] },
                     { label: 'Date', value: selectedDate ? format(selectedDate, 'EEEE, d MMMM yyyy') : '' },
                     { label: 'Time', value: selectedTime ? formatTime(selectedTime) : '' },
                     { label: 'Duration', value: `${service?.duration} minutes` },
