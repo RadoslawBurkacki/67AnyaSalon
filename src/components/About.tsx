@@ -5,7 +5,7 @@ import { Award, Heart, Sparkles, Users } from 'lucide-react'
 import Image from 'next/image'
 
 const highlights = [
-  { Icon: Award, title: 'Certified Professional', desc: 'Fully qualified in nail technology and therapeutic massage' },
+  { Icon: Award, title: 'Certified Professional', desc: 'Fully qualified in lash artistry, brow treatments and therapeutic massage' },
   { Icon: Heart, title: 'Passion for Detail', desc: 'Every client receives personalised attention and care' },
   { Icon: Sparkles, title: 'Premium Products', desc: 'Only the finest professional-grade products used' },
   { Icon: Users, title: 'Loyal Clientele', desc: 'Building long-term relationships built on trust and results' },
@@ -71,13 +71,14 @@ export default function About() {
                 I believe every visit should leave you feeling refreshed, confident, and truly cared for.
               </p>
               <p>
-                With over a decade of experience in nail artistry and therapeutic massage, I&apos;ve had
-                the privilege of working with hundreds of clients, each with their own unique needs.
-                I approach every treatment with patience, creativity, and a commitment to excellence.
+                With over a decade of experience in lash extensions, brow treatments and therapeutic
+                massage, I&apos;ve had the privilege of working with hundreds of clients, each with
+                their own unique needs. I approach every treatment with patience, creativity, and a
+                commitment to excellence.
               </p>
               <p>
-                Whether you&apos;re treating yourself to a gel manicure, unwinding with a deep tissue
-                massage, or booking a pamper package — you&apos;re in expert hands.
+                Whether you&apos;re coming in for a lash set, brow lamination, or a relaxing massage
+                — you&apos;re in expert hands.
               </p>
             </div>
 
